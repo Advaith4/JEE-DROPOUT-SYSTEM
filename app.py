@@ -51,6 +51,100 @@ def is_class_match(val, classes):
             return True
     return False
 
+# A neutral/baseline student profile to compare actual inputs against (used in XAI calculations)
+BASELINE_STUDENT = {
+    'jee_main_score': 75.0,
+    'jee_advanced_score': 55.0,
+    'mock_test_score_avg': 65.0,
+    'school_board': 'CBSE',
+    'class_12_percent': 75.0,
+    'attempt_count': 1.0,
+    'coaching_institute': 'FIITJEE',
+    'daily_study_hours': 5.0,
+    'family_income': 'Mid',
+    'parent_education': 'Graduate',
+    'location_type': 'Semi-Urban',
+    'peer_pressure_level': 'Medium',
+    'mental_health_issues': 'No',
+    'admission_taken': 'No'
+}
+
+def explain_prediction_xai(model, scaler, label_encoders, input_dict, base_dropout_prob):
+    # Model-agnostic local feature attribution (Kernel-SHAP / LIME style)
+    # We substitute each feature's value with a baseline student's value one-by-one, 
+    # run inference, and measure the difference in dropout probability.
+    explanations = []
+    
+    # Run a perturbation loop
+    for feature in FEATURE_ORDER:
+        # Create a modified profile starting from the actual input_dict
+        modified_dict = input_dict.copy()
+        
+        # Substitute the baseline value for THIS feature
+        modified_dict[feature] = BASELINE_STUDENT[feature]
+        
+        # Process and scale the modified dict
+        try:
+            modified_df = pd.DataFrame([modified_dict])
+            
+            # Encode categorical
+            for col in CATEGORICAL_FEATURES:
+                le = label_encoders[col]
+                cleaned_val = get_clean_categorical_value(modified_dict[col], le.classes_)
+                if is_class_match(cleaned_val, le.classes_):
+                    modified_df[col] = le.transform([cleaned_val])
+                else:
+                    # Fallback to zero code
+                    modified_df[col] = 0
+            
+            # Scale numerical
+            modified_df[NUMERICAL_FEATURES] = scaler.transform(modified_df[NUMERICAL_FEATURES])
+            
+            # Run model inference to get perturbed probability
+            if hasattr(model, "predict_proba"):
+                probs = model.predict_proba(modified_df)[0]
+                perturbed_dropout_prob = float(probs[1] if len(probs) > 1 else 0)
+            else:
+                pred = model.predict(modified_df)[0]
+                perturbed_dropout_prob = 1.0 if pred == 1 else 0.0
+                
+            # The contribution of the student's ACTUAL value is:
+            # P(actual) - P(baseline_substituted)
+            # A positive contribution means this feature increases dropout risk.
+            # A negative contribution means this feature decreases dropout risk.
+            contribution = base_dropout_prob - (perturbed_dropout_prob * 100)
+            
+            # Format the output value to represent the clean user-facing name
+            display_name = feature.replace('_', ' ').replace('avg', '').title()
+            
+            # Clean up value display
+            actual_val = input_dict[feature]
+            if feature in NUMERICAL_FEATURES:
+                if feature == 'daily_study_hours':
+                    actual_display = f"{float(actual_val):.1f} hrs"
+                elif feature in ['jee_main_score', 'jee_advanced_score', 'mock_test_score_avg', 'class_12_percent']:
+                    actual_display = f"{float(actual_val):.1f}%"
+                else:
+                    actual_display = str(int(float(actual_val)))
+            else:
+                actual_display = str(actual_val)
+                
+            explanations.append({
+                "feature": feature,
+                "display_name": display_name,
+                "actual_value": actual_display,
+                "contribution": round(contribution, 2)
+            })
+            
+        except Exception as e:
+            # Silently skip if there's any perturbation failure
+            print(f"Perturbation failed for {feature}: {e}")
+            continue
+            
+    # Sort contributions by absolute impact (highest impact first)
+    explanations.sort(key=lambda x: abs(x["contribution"]), reverse=True)
+    return explanations
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     prediction = None
@@ -163,11 +257,15 @@ def predict_api():
         
         prediction = "Dropout" if pred == 1 else "Not Dropout"
         
+        # Calculate XAI Local Feature Attributions
+        xai_explanations = explain_prediction_xai(model, scaler, label_encoders, input_dict, probability)
+        
         return flask.jsonify({
             "success": True,
             "prediction": prediction,
             "probability": probability,
-            "input_data": input_dict
+            "input_data": input_dict,
+            "xai_explanations": xai_explanations
         })
 
     except Exception as e:

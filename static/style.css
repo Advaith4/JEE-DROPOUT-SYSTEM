@@ -908,6 +908,141 @@ select option {
 .rec-card.warning { border-color: rgba(245, 158, 11, 0.15); background: rgba(245, 158, 11, 0.01); }
 .rec-card.danger { border-color: rgba(239, 68, 68, 0.15); background: rgba(239, 68, 68, 0.01); }
 
+/* Explainable AI (XAI) Dashboard Container */
+.xai-container {
+    background: rgba(15, 23, 42, 0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.85rem;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.xai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.xai-header h3 {
+    font-size: 1.15rem;
+    font-weight: 750;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+}
+
+.xai-header h3 i {
+    color: var(--accent-glow);
+    width: 18px;
+    height: 18px;
+}
+
+.xai-badge {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: hsl(263, 90%, 75%);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.xai-intro {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.45;
+}
+
+.xai-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.xai-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.xai-item-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.xai-item-name {
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.xai-actual-tag {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+.xai-item-value {
+    font-weight: 750;
+    font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Color Coding for Attributions */
+.xai-item.risk .xai-item-value {
+    color: var(--danger-glow);
+}
+
+.xai-item.protective .xai-item-value {
+    color: var(--success-glow);
+}
+
+/* Attribution Bar Animations */
+.xai-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.xai-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+}
+
+.xai-item.risk .xai-bar {
+    background: linear-gradient(to right, var(--danger), var(--danger-glow));
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.xai-item.protective .xai-bar {
+    background: linear-gradient(to right, var(--success), var(--success-glow));
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.xai-empty {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+    text-align: center;
+}
+
 /* Real-Time "What-If" Simulator Container */
 .simulator-panel {
     background: rgba(15, 23, 42, 0.3);

@@ -292,6 +292,18 @@
                             </div>
                         </div>
 
+                        <!-- Explainable AI (XAI) Attributions -->
+                        <div class="xai-container">
+                            <div class="xai-header">
+                                <h3><i data-lucide="brain"></i> AI Decision Explainer (XAI)</h3>
+                                <span class="xai-badge"><i data-lucide="eye"></i> Explainable AI</span>
+                            </div>
+                            <p class="xai-intro">This engine calculates Local Feature Attributions (LIME/SHAP-style) in real-time, displaying which parameters actively increase risk (coral red) or protect against it (emerald green) relative to a neutral baseline student profile.</p>
+                            <div class="xai-list" id="xai-attribution-box">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
                         <!-- Real-time "What-If" Simulator Panel -->
                         <div class="simulator-panel">
                             <div class="simulator-header">
@@ -643,7 +655,7 @@
                     })
                     .then(data => {
                         if (data.success) {
-                            revealResults(data.prediction, data.probability, payload);
+                            revealResults(data.prediction, data.probability, payload, data.xai_explanations);
                         } else {
                             throw new Error('Unsuccessful execution');
                         }
@@ -658,7 +670,7 @@
                 }, 1700); // give ample time for the slick loader animations
             }
 
-            function revealResults(prediction, probability, data) {
+            function revealResults(prediction, probability, data, xaiExplanations) {
                 resultLoading.style.display = 'none';
                 resultDisplay.style.display = 'block';
                 
@@ -709,6 +721,47 @@
 
                 // Render Actionable Suggestions
                 renderRecommendations(prediction, data);
+
+                // Render XAI Explanations
+                renderXaiExplanations(xaiExplanations);
+            }
+
+            function renderXaiExplanations(xaiExplanations) {
+                const xaiBox = document.getElementById('xai-attribution-box');
+                xaiBox.innerHTML = '';
+                
+                if (!xaiExplanations || xaiExplanations.length === 0) {
+                    xaiBox.innerHTML = '<p class="xai-empty">No explainable metrics compiled.</p>';
+                    return;
+                }
+                
+                // Show top 6 contributing features for optimal visual balance
+                const topAttributions = xaiExplanations.slice(0, 6);
+                
+                topAttributions.forEach(item => {
+                    const contribution = item.contribution;
+                    if (Math.abs(contribution) < 0.1) return; // skip tiny negligible attributions
+                    
+                    const displayVal = contribution > 0 ? `+${contribution}%` : `${contribution}%`;
+                    const typeClass = contribution > 0 ? 'risk' : 'protective';
+                    
+                    // Calculate percentage width (cap absolute at 100)
+                    const absContr = Math.min(Math.abs(contribution), 100);
+                    const widthPercent = Math.max(absContr, 3);
+                    
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `xai-item ${typeClass}`;
+                    itemEl.innerHTML = `
+                        <div class="xai-item-info">
+                            <span class="xai-item-name">${item.display_name} <span class="xai-actual-tag">(${item.actual_value})</span></span>
+                            <span class="xai-item-value">${displayVal}</span>
+                        </div>
+                        <div class="xai-bar-bg">
+                            <div class="xai-bar" style="width: ${widthPercent}%"></div>
+                        </div>
+                    `;
+                    xaiBox.appendChild(itemEl);
+                });
             }
 
             function renderRecommendations(prediction, data) {
@@ -864,6 +917,7 @@
                         }
 
                         renderRecommendations(prediction, simulatedPayload);
+                        renderXaiExplanations(data.xai_explanations);
                         
                         setTimeout(() => {
                             resultWorkspace.classList.remove('pulse-updating');

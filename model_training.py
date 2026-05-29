@@ -83,8 +83,15 @@ for name, model in models.items():
         "F1 Score": f1
     }
     
-    # We'll use F1 Score to select the best model
-    if f1 > best_model_score:
+# We'll use F1 Score to select the best model, but prefer ensemble models (like Random Forest) 
+# if their score is within 2% of the absolute best, to enable robust XAI probability attributions.
+abs_best_score = max([res["F1 Score"] for res in results.values()])
+
+for name, model in models.items():
+    f1 = results[name]["F1 Score"]
+    is_rf_preferred = (name == "Random Forest" and abs_best_score - f1 <= 0.02)
+    
+    if is_rf_preferred or (f1 > best_model_score and not (best_model_name == "Random Forest" and best_model_score - f1 <= 0.02)):
         best_model_score = f1
         best_model_name = name
         best_model_obj = model
