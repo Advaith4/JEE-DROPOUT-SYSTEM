@@ -3,6 +3,7 @@
 [![Python Version](https://img.shields.ly/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask Version](https://img.shields.ly/badge/flask-3.1.3-green.svg)](https://flask.palletsprojects.com/)
 [![Scikit-Learn](https://img.shields.ly/badge/scikit--learn-1.7.2-orange.svg)](https://scikit-learn.org/)
+[![LIME Version](https://img.shields.ly/badge/XAI-LIME-blueviolet.svg)](#)
 [![License](https://img.shields.ly/badge/license-MIT-brightgreen.svg)](#)
 
 A full-stack, state-of-the-art machine learning web application designed to forecast and mitigate dropout risks for students preparing for the highly competitive Joint Entrance Examination (JEE) in India. 
@@ -40,6 +41,13 @@ Leveraging historical student dataset indicators and modern predictive modeling,
   2. **Model Confusion Matrix**: Detailing precision and classification accuracy.
   3. **Key Predictors Guide**: Reviewing which variables influence outcomes most heavily.
 
+### 6. 🧠 Explainable AI (LIME) Local Attributions
+* **Official LIME Integration**: Integrates the official `lime.lime_tabular.LimeTabularExplainer` fitted on the training dataset to explain individual model predictions in real-time.
+* **Feature Contribution Visualizer**: Renders dynamic, responsive horizontal contribution bars:
+  * 🔴 **Glow Coral Red**: Features that increase dropout risk (positive contributions).
+  * 🟢 **Glow Emerald Green**: Factors that act as protective drivers (negative contributions).
+* **Reverse Preprocessing on-the-fly**: Preprocessed values are decoded back to human-readable scales (e.g., `2.0 hrs` daily study, `Low` family income) for high interpretability.
+
 ---
 
 ## 🛠️ Technology Stack
@@ -48,7 +56,7 @@ Leveraging historical student dataset indicators and modern predictive modeling,
 | :--- | :--- |
 | **Frontend** | HTML5, Vanilla HSL CSS3, JavaScript (ES6+ REST Fetch), Lucide Icons, Outfit Typography |
 | **Backend** | Python 3.10+, Flask REST API |
-| **Machine Learning** | Scikit-Learn, Pandas, NumPy, Joblib (Serialization) |
+| **Machine Learning & XAI** | Scikit-Learn, Pandas, NumPy, LIME (Local Interpretable Model-agnostic Explanations), Joblib |
 | **Graphics** | Matplotlib, Seaborn |
 
 ---
@@ -91,7 +99,7 @@ cd JEE-DROPOUT-SYSTEM
 ### 2. Install dependencies
 Ensure you have **Python 3.10 or later** installed. Install the necessary mathematical, statistical, and server packages:
 ```bash
-pip install flask joblib pandas numpy scikit-learn matplotlib seaborn
+pip install flask joblib pandas numpy scikit-learn matplotlib seaborn lime
 ```
 
 ### 3. (Optional) Run the ML Pipeline
