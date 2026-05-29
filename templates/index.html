@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEE Journey Predictor & Insights Hub</title>
+    <!-- Outfit Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for high quality vector assets -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Drift background blobs for immersive experience -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="container">
+        <!-- Premium Header Area -->
+        <header>
+            <div class="header-badge">
+                <i data-lucide="cpu" class="badge-icon"></i> Powered by Advanced Machine Learning
+            </div>
+            <h1>JEE Journey <span class="highlight">Predictor</span></h1>
+            <p>Analyze academic, preparation, and socio-emotional factors to forecast outcomes and optimize your path.</p>
+        </header>
+
+        <main>
+            <!-- Left Side: Interactive Multi-Step Form -->
+            <div class="card form-card">
+                <div class="card-header">
+                    <h2><i data-lucide="user-check"></i> Student Profile</h2>
+                    <span class="step-indicator">Step <span id="current-step-num">1</span> of 3</span>
+                </div>
+                
+                <!-- Progress Line Wizard -->
+                <div class="wizard-progress">
+                    <div class="progress-bar" id="progress-bar"></div>
+                    <div class="wizard-step active" data-step="1">
+                        <div class="step-icon"><i data-lucide="graduation-cap"></i></div>
+                        <span class="step-label">Academic</span>
+                    </div>
+                    <div class="wizard-step" data-step="2">
+                        <div class="step-icon"><i data-lucide="book-open"></i></div>
+                        <span class="step-label">Preparation</span>
+                    </div>
+                    <div class="wizard-step" data-step="3">
+                        <div class="step-icon"><i data-lucide="users"></i></div>
+                        <span class="step-label">Personal</span>
+                    </div>
+                </div>
+
+                <div class="error-toast" id="error-toast" style="display: none;">
+                    <i data-lucide="alert-triangle"></i>
+                    <span id="error-message"></span>
+                </div>
+
+                <form id="prediction-form" class="overlaid-form">
+                    <!-- STEP 1: ACADEMICS -->
+                    <div class="form-step active" data-step="1">
+                        <div class="step-intro">
+                            <h3>Academic Foundations</h3>
+                            <p>Provide your official or target scores and current performance percentages.</p>
+                        </div>
+                        <div class="input-grid">
+                            <div class="input-group">
+                                <label for="jee_main_score"><i data-lucide="award"></i> JEE Main Percentile</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="jee_main_score" name="jee_main_score" min="0" max="100" step="0.01" required placeholder="e.g. 98.45">
+                                    <span class="input-suffix">%ile</span>
+                                </div>
+                                <span class="input-hint">Percentile score (0 to 100)</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="jee_advanced_score"><i data-lucide="target"></i> JEE Advanced Score</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="jee_advanced_score" name="jee_advanced_score" min="0" max="100" step="0.01" required placeholder="e.g. 65.20">
+                                    <span class="input-suffix">%</span>
+                                </div>
+                                <span class="input-hint">Target or actual percentage (0 to 100)</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="mock_test_score_avg"><i data-lucide="activity"></i> Mock Test Score Avg</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="mock_test_score_avg" name="mock_test_score_avg" min="0" max="100" step="0.01" required placeholder="e.g. 70.50">
+                                    <span class="input-suffix">%</span>
+                                </div>
+                                <span class="input-hint">Average in weekly mock tests</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="class_12_percent"><i data-lucide="file-text"></i> Class 12 Percentage</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="class_12_percent" name="class_12_percent" min="50" max="100" step="0.01" required placeholder="e.g. 85.5">
+                                    <span class="input-suffix">%</span>
+                                </div>
+                                <span class="input-hint">Board percentage (minimum 50%)</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="attempt_count"><i data-lucide="refresh-cw"></i> Attempt Number</label>
+                                <select id="attempt_count" name="attempt_count" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="1">1st Attempt (Freshman)</option>
+                                    <option value="2">2nd Attempt (Repeater/Dropper)</option>
+                                </select>
+                                <span class="input-hint">Number of times attempting JEE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PREPARATION -->
+                    <div class="form-step" data-step="2">
+                        <div class="step-intro">
+                            <h3>Preparation Environment</h3>
+                            <p>Details regarding coaching, daily routine, and current admission progress.</p>
+                        </div>
+                        <div class="input-grid">
+                            <div class="input-group">
+                                <label for="coaching_institute"><i data-lucide="home"></i> Coaching Institute</label>
+                                <select id="coaching_institute" name="coaching_institute" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('coaching_institute', []) %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Prep coaching facility enrollment</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="daily_study_hours"><i data-lucide="clock"></i> Daily Study Hours</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="daily_study_hours" name="daily_study_hours" min="0" max="18" step="0.1" required placeholder="e.g. 6.5">
+                                    <span class="input-suffix">hrs</span>
+                                </div>
+                                <span class="input-hint">Excluding coaching/school hours (Max 18)</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="admission_taken"><i data-lucide="check-circle-2"></i> Alternative Admission Taken?</label>
+                                <select id="admission_taken" name="admission_taken" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('admission_taken', []) %}
+                                    <option value="{{ opt }}">Backup Admission: {{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Secured backup admission in other college?</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="location_type"><i data-lucide="map-pin"></i> Location Type</label>
+                                <select id="location_type" name="location_type" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('location_type', []) %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Demographic setting</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: SOCIAL & PERSONAL -->
+                    <div class="form-step" data-step="3">
+                        <div class="step-intro">
+                            <h3>Socio-Emotional & Family Profile</h3>
+                            <p>Tell us more about family support, schooling, and personal stress indicators.</p>
+                        </div>
+                        <div class="input-grid">
+                            <div class="input-group">
+                                <label for="school_board"><i data-lucide="clipboard"></i> School Board</label>
+                                <select id="school_board" name="school_board" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('school_board', []) %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Class 12th board affiliation</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="family_income"><i data-lucide="indian-rupee"></i> Family Income</label>
+                                <select id="family_income" name="family_income" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('family_income', []) %}
+                                    <option value="{{ opt }}">{{ opt }} Income Bracket</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Annual family financial status</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="parent_education"><i data-lucide="book-open"></i> Parent's Education</label>
+                                <select id="parent_education" name="parent_education" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('parent_education', []) %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Highest academic degree of parents</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="peer_pressure_level"><i data-lucide="trending-up"></i> Peer Pressure Level</label>
+                                <select id="peer_pressure_level" name="peer_pressure_level" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('peer_pressure_level', []) %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Perceived academic rivalry and peer pressure</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="mental_health_issues"><i data-lucide="smile"></i> Mental Health Challenges</label>
+                                <select id="mental_health_issues" name="mental_health_issues" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for opt in options.get('mental_health_issues', []) %}
+                                    <option value="{{ opt }}">Experiencing Issues: {{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="input-hint">Severe stress, anxiety, or burnout?</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wizard Buttons -->
+                    <div class="wizard-buttons">
+                        <button type="button" class="btn btn-secondary" id="prev-btn" style="display: none;">
+                            <i data-lucide="arrow-left"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-primary" id="next-btn">
+                            Next <i data-lucide="arrow-right"></i>
+                        </button>
+                        <button type="submit" class="btn btn-accent" id="submit-btn" style="display: none;">
+                            Predict Future <i data-lucide="sparkles"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Dynamic Results & Interactive Analytics -->
+            <div class="right-panel">
+                <!-- Result Card Workspace -->
+                <div class="card result-card empty-state" id="result-workspace">
+                    
+                    <!-- Pre-Submit View -->
+                    <div id="result-placeholder" class="result-placeholder">
+                        <div class="placeholder-icon">
+                            <i data-lucide="brain-circuit"></i>
+                        </div>
+                        <h3>Awaiting Profile Analysis</h3>
+                        <p>Complete the profile wizard on the left to invoke our machine learning algorithms. We will forecast your dropout risk and compile tailored preparation guidelines.</p>
+                    </div>
+
+                    <!-- AJAX Loading Skeleton -->
+                    <div id="result-loading" class="result-loading" style="display: none;">
+                        <div class="spinner-outer">
+                            <div class="spinner-inner"></div>
+                            <i data-lucide="hourglass" class="spinner-icon"></i>
+                        </div>
+                        <h3>Engine Simulating Outcomes</h3>
+                        <div class="loading-steps">
+                            <div class="loading-step active" id="l-step-1"><i data-lucide="check-circle-2"></i> Ingesting academic features...</div>
+                            <div class="loading-step" id="l-step-2"><i data-lucide="check-circle-2"></i> Scaling numerical vectors...</div>
+                            <div class="loading-step" id="l-step-3"><i data-lucide="check-circle-2"></i> Running ensemble classifier...</div>
+                            <div class="loading-step" id="l-step-4"><i data-lucide="check-circle-2"></i> Compiling advice matrix...</div>
+                        </div>
+                    </div>
+
+                    <!-- Prediction Results Panel -->
+                    <div id="result-display" style="display: none;">
+                        <div class="prediction-header">
+                            <span class="prediction-tag" id="prediction-tag">Analysis Complete</span>
+                            <h2>Predictive Assessment</h2>
+                        </div>
+                        
+                        <div class="score-circle-wrapper">
+                            <!-- Circular SVG Gauge -->
+                            <svg class="score-gauge" viewBox="0 0 120 120">
+                                <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+                                <circle class="gauge-fill" id="gauge-fill-circle" cx="60" cy="60" r="50" style="stroke-dashoffset: 314;"></circle>
+                            </svg>
+                            <div class="score-content">
+                                <span class="score-percent" id="confidence-percentage">0%</span>
+                                <span class="score-label">Risk Rating</span>
+                            </div>
+                        </div>
+
+                        <div class="outcome-alert" id="outcome-alert-box">
+                            <span class="outcome-value" id="prediction-result-text">NOT DROPOUT</span>
+                            <p class="outcome-summary" id="prediction-summary-text"></p>
+                        </div>
+
+                        <!-- Actionable Recommendation Matrix -->
+                        <div class="recommendations-container">
+                            <h3><i data-lucide="compass"></i> Actionable Coaching Recommendations</h3>
+                            <div class="rec-grid" id="recommendations-box">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Real-time "What-If" Simulator Panel -->
+                        <div class="simulator-panel">
+                            <div class="simulator-header">
+                                <h3><i data-lucide="sliders"></i> Live "What-If" Simulator</h3>
+                                <span class="sim-badge"><i data-lucide="zap"></i> Interactive</span>
+                            </div>
+                            <p class="sim-intro">Slide or toggle key parameters below to watch how risk levels change instantly without resetting the form!</p>
+                            
+                            <div class="sim-controls">
+                                <div class="sim-control">
+                                    <div class="control-label-wrapper">
+                                        <label for="sim_study_hours">Daily Study Hours</label>
+                                        <span class="control-value" id="sim_study_hours_val">6.0 hrs</span>
+                                    </div>
+                                    <input type="range" id="sim_study_hours" min="0" max="18" step="0.5" value="6.0">
+                                </div>
+                                <div class="sim-control">
+                                    <div class="control-label-wrapper">
+                                        <label for="sim_mock_score">Mock Test Avg</label>
+                                        <span class="control-value" id="sim_mock_score_val">70.0%</span>
+                                    </div>
+                                    <input type="range" id="sim_mock_score" min="10" max="100" step="1" value="70">
+                                </div>
+                                <div class="sim-row">
+                                    <div class="sim-control half">
+                                        <label for="sim_peer_pressure">Peer Pressure</label>
+                                        <select id="sim_peer_pressure">
+                                            <option value="Low">Low</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="High">High</option>
+                                        </select>
+                                    </div>
+                                    <div class="sim-control half">
+                                        <label for="sim_mental_health">Mental Stress</label>
+                                        <select id="sim_mental_health">
+                                            <option value="No">No Challenges</option>
+                                            <option value="Yes">Yes, Severe</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Tabbed Diagnostic Visualizations -->
+                <div class="card chart-card">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="model-chart"><i data-lucide="bar-chart-3"></i> Algorithms</button>
+                        <button class="tab-btn" data-tab="matrix-chart"><i data-lucide="grid-3x3"></i> Matrix</button>
+                        <button class="tab-btn" data-tab="determinants-list"><i data-lucide="list-checks"></i> Indicators</button>
+                    </div>
+
+                    <div class="tabs-content">
+                        <!-- Tab 1: Model Comparison -->
+                        <div class="tab-pane active" id="model-chart">
+                            <h3>Model Performance Benchmarks</h3>
+                            <p class="tab-intro">This graph evaluates 5 supervised ML algorithms on test splits. Our system automatically deploys the one securing the peak F1 Score.</p>
+                            <div class="chart-wrapper">
+                                <img src="{{ url_for('static', filename='model_comparison.png') }}" alt="Model Performance Comparison Graph">
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Confusion Matrix -->
+                        <div class="tab-pane" id="matrix-chart">
+                            <h3>Confusion Matrix (Best Model)</h3>
+                            <p class="tab-intro">Details the precision matrices, showing the actual vs. predicted True Positive/Negative classifications.</p>
+                            <div class="chart-wrapper">
+                                <img src="{{ url_for('static', filename='confusion_matrix.png') }}" alt="Confusion Matrix Graph">
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Key Determinants -->
+                        <div class="tab-pane" id="determinants-list">
+                            <h3>Key Predictors Explained</h3>
+                            <p class="tab-intro">Data correlations highlight which factors contribute most significantly to JEE student dropout risk levels:</p>
+                            
+                            <div class="determinant-list">
+                                <div class="det-item">
+                                    <div class="det-icon"><i data-lucide="clock"></i></div>
+                                    <div class="det-details">
+                                        <h4>Daily Study Hours</h4>
+                                        <p>Severe dropouts correlate heavily with extremely low daily study hours (< 2.5) OR extreme burnouts (> 10 hrs) without proper stress management.</p>
+                                    </div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-icon"><i data-lucide="brain"></i></div>
+                                    <div class="det-details">
+                                        <h4>Mental Health challenges</h4>
+                                        <p>Anxiety and high academic strain without counseling constitute the single largest psychological predictor of dropping out.</p>
+                                    </div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-icon"><i data-lucide="activity"></i></div>
+                                    <div class="det-details">
+                                        <h4>Average Mock Scores</h4>
+                                        <p>Consistent mock test scores act as an indicator of academic confidence. Dropping below 55% average significantly increases dropping out tendencies.</p>
+                                    </div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-icon"><i data-lucide="heart"></i></div>
+                                    <div class="det-details">
+                                        <h4>Peer Pressure level</h4>
+                                        <p>High relative competition levels often create isolation or heavy cognitive fatigue, motivating backup alternative admissions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Premium Footer -->
+        <footer>
+            <div class="footer-content">
+                <p>JEE Journey Predictor Analytics &bull; Designed for Holistic Counseling & Intervention</p>
+                <span class="footer-tech">Stack: Flask &bull; Scikit-Learn &bull; Vanilla HSL CSS &bull; Custom REST Inference</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Application Javascript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Re-initialize Lucide Icons
+            lucide.createIcons();
+
+            // --- Multi-Step Form Logic ---
+            let currentStep = 1;
+            const totalSteps = 3;
+            
+            const formSteps = document.querySelectorAll('.form-step');
+            const wizardSteps = document.querySelectorAll('.wizard-step');
+            const currentStepNumSpan = document.getElementById('current-step-num');
+            const progressBar = document.getElementById('progress-bar');
+            
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const form = document.getElementById('prediction-form');
+
+            function updateStepVisibility() {
+                // Show/hide steps
+                formSteps.forEach(step => {
+                    const stepNum = parseInt(step.getAttribute('data-step'));
+                    if (stepNum === currentStep) {
+                        step.classList.add('active');
+                    } else {
+                        step.classList.remove('active');
+                    }
+                });
+
+                // Update Wizard Steps
+                wizardSteps.forEach(step => {
+                    const stepNum = parseInt(step.getAttribute('data-step'));
+                    if (stepNum < currentStep) {
+                        step.classList.add('completed');
+                        step.classList.remove('active');
+                    } else if (stepNum === currentStep) {
+                        step.classList.add('active');
+                        step.classList.remove('completed');
+                    } else {
+                        step.classList.remove('active', 'completed');
+                    }
+                });
+
+                // Update progress line length
+                const percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+                progressBar.style.width = `${percent}%`;
+
+                // Update step text
+                currentStepNumSpan.textContent = currentStep;
+
+                // Adjust buttons
+                if (currentStep === 1) {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'inline-flex';
+                    submitBtn.style.display = 'none';
+                } else if (currentStep === totalSteps) {
+                    prevBtn.style.display = 'inline-flex';
+                    nextBtn.style.display = 'none';
+                    submitBtn.style.display = 'inline-flex';
+                } else {
+                    prevBtn.style.display = 'inline-flex';
+                    nextBtn.style.display = 'inline-flex';
+                    submitBtn.style.display = 'none';
+                }
+            }
+
+            function validateCurrentStep() {
+                const activeStepFields = formSteps[currentStep - 1].querySelectorAll('input[required], select[required]');
+                let valid = true;
+                
+                // Clear active custom styles
+                activeStepFields.forEach(field => {
+                    field.classList.remove('input-invalid');
+                });
+                
+                for (let field of activeStepFields) {
+                    if (!field.value || field.value.trim() === '') {
+                        field.classList.add('input-invalid');
+                        showToast(`Please complete all required fields in this step.`);
+                        field.focus();
+                        valid = false;
+                        break;
+                    }
+                    
+                    // Numeric range checks
+                    if (field.type === 'number') {
+                        const val = parseFloat(field.value);
+                        const min = parseFloat(field.min);
+                        const max = parseFloat(field.max);
+                        if (!isNaN(min) && val < min) {
+                            field.classList.add('input-invalid');
+                            showToast(`Value for ${field.previousElementSibling.textContent.trim()} must be at least ${min}.`);
+                            valid = false;
+                            break;
+                        }
+                        if (!isNaN(max) && val > max) {
+                            field.classList.add('input-invalid');
+                            showToast(`Value for ${field.previousElementSibling.textContent.trim()} cannot exceed ${max}.`);
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+                
+                return valid;
+            }
+
+            nextBtn.addEventListener('click', function() {
+                if (validateCurrentStep()) {
+                    if (currentStep < totalSteps) {
+                        currentStep++;
+                        updateStepVisibility();
+                    }
+                }
+            });
+
+            prevBtn.addEventListener('click', function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateStepVisibility();
+                }
+            });
+
+            // Toast feedback mechanism
+            const errorToast = document.getElementById('error-toast');
+            const errorMsgSpan = document.getElementById('error-message');
+            
+            function showToast(msg) {
+                errorMsgSpan.textContent = msg;
+                errorToast.style.display = 'flex';
+                errorToast.style.animation = 'none';
+                void errorToast.offsetWidth; // trigger reflow
+                errorToast.style.animation = 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                
+                // Auto hide
+                setTimeout(() => {
+                    errorToast.style.display = 'none';
+                }, 4000);
+            }
+
+            // --- Tabs Logic ---
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetTabId = this.getAttribute('data-tab');
+                    
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabPanes.forEach(pane => pane.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(targetTabId).classList.add('active');
+                });
+            });
+
+            // --- Form Submit / AJAX Prediction ---
+            const resultWorkspace = document.getElementById('result-workspace');
+            const resultPlaceholder = document.getElementById('result-placeholder');
+            const resultLoading = document.getElementById('result-loading');
+            const resultDisplay = document.getElementById('result-display');
+            
+            const confidencePercentage = document.getElementById('confidence-percentage');
+            const gaugeFillCircle = document.getElementById('gauge-fill-circle');
+            const predictionResultText = document.getElementById('prediction-result-text');
+            const predictionSummaryText = document.getElementById('prediction-summary-text');
+            const recommendationsBox = document.getElementById('recommendations-box');
+            const outcomeAlertBox = document.getElementById('outcome-alert-box');
+
+            // Form inputs cache to populate Simulator state
+            let currentPayload = {};
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (!validateCurrentStep()) return;
+
+                // Grab form data
+                const formData = new FormData(form);
+                const payload = {};
+                formData.forEach((value, key) => {
+                    payload[key] = value;
+                });
+                
+                currentPayload = { ...payload }; // Deep copy
+                triggerPrediction(payload);
+            });
+
+            function triggerPrediction(payload) {
+                // Transition to loading state
+                resultPlaceholder.style.display = 'none';
+                resultDisplay.style.display = 'none';
+                resultLoading.style.display = 'block';
+                resultWorkspace.className = "card result-card loading-state";
+
+                // Step-by-step loading simulation for premium tech feel
+                const lSteps = [
+                    document.getElementById('l-step-1'),
+                    document.getElementById('l-step-2'),
+                    document.getElementById('l-step-3'),
+                    document.getElementById('l-step-4')
+                ];
+                
+                lSteps.forEach(step => step.classList.remove('active'));
+                
+                setTimeout(() => lSteps[0].classList.add('active'), 200);
+                setTimeout(() => lSteps[1].classList.add('active'), 500);
+                setTimeout(() => lSteps[2].classList.add('active'), 900);
+                setTimeout(() => lSteps[3].classList.add('active'), 1300);
+
+                // Fetch Prediction API
+                setTimeout(() => {
+                    fetch('/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Server error'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            revealResults(data.prediction, data.probability, payload);
+                        } else {
+                            throw new Error('Unsuccessful execution');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        resultLoading.style.display = 'none';
+                        resultPlaceholder.style.display = 'flex';
+                        resultWorkspace.className = "card result-card empty-state";
+                        showToast(`Prediction failed: ${err.message}`);
+                    });
+                }, 1700); // give ample time for the slick loader animations
+            }
+
+            function revealResults(prediction, probability, data) {
+                resultLoading.style.display = 'none';
+                resultDisplay.style.display = 'block';
+                
+                // Adjust workspace layout color base
+                if (prediction === 'Dropout') {
+                    resultWorkspace.className = "card result-card dropout-state result-revealed";
+                    outcomeAlertBox.className = "outcome-alert dropout";
+                    predictionResultText.textContent = "DROPOUT RISK";
+                    predictionSummaryText.textContent = "Our ML pipeline forecasts a high probability of dropout. Specific academic or mental stress indicators deserve immediate intervention.";
+                } else {
+                    resultWorkspace.className = "card result-card success-state result-revealed";
+                    outcomeAlertBox.className = "outcome-alert success";
+                    predictionResultText.textContent = "STABLE / SUCCESS";
+                    predictionSummaryText.textContent = "Excellent trajectory! Student displays positive habits and healthy indicators. Review structural factors below to maintain this momentum.";
+                }
+
+                // Confidence Gauge & Count-Up Animation
+                let targetProb = probability;
+                let startVal = 0;
+                const duration = 1000; // ms
+                const interval = 20; // ms
+                const steps = duration / interval;
+                const increment = targetProb / steps;
+                
+                let currentVal = 0;
+                const timer = setInterval(() => {
+                    currentVal += increment;
+                    if (currentVal >= targetProb) {
+                        currentVal = targetProb;
+                        clearInterval(timer);
+                    }
+                    confidencePercentage.textContent = `${currentVal.toFixed(1)}%`;
+                    
+                    // Circular Gauge Fill (stroke-dashoffset range is 314 (0%) to 0 (100%))
+                    const dashoffset = 314 - (314 * (currentVal / 100));
+                    gaugeFillCircle.style.strokeDashoffset = dashoffset;
+                }, interval);
+
+                // Setup Simulator default inputs from current payload
+                document.getElementById('sim_study_hours').value = data.daily_study_hours;
+                document.getElementById('sim_study_hours_val').textContent = `${parseFloat(data.daily_study_hours).toFixed(1)} hrs`;
+                
+                document.getElementById('sim_mock_score').value = data.mock_test_score_avg;
+                document.getElementById('sim_mock_score_val').textContent = `${parseFloat(data.mock_test_score_avg).toFixed(1)}%`;
+                
+                document.getElementById('sim_peer_pressure').value = data.peer_pressure_level;
+                document.getElementById('sim_mental_health').value = data.mental_health_issues;
+
+                // Render Actionable Suggestions
+                renderRecommendations(prediction, data);
+            }
+
+            function renderRecommendations(prediction, data) {
+                recommendationsBox.innerHTML = '';
+                
+                const recs = [];
+                
+                // 1. Study Hours check
+                const hours = parseFloat(data.daily_study_hours);
+                if (hours < 3.0) {
+                    recs.push({
+                        icon: 'clock',
+                        type: 'warning',
+                        title: 'Increase Core Practice',
+                        desc: `Currently studying ${hours} hrs daily. For competitive JEE preps, target 5-7 focused self-study hours to secure mock confidence.`
+                    });
+                } else if (hours > 9.5) {
+                    recs.push({
+                        icon: 'battery-warning',
+                        type: 'danger',
+                        title: 'High Burnout Warning',
+                        desc: `Studying ${hours} hours daily creates high cognitive strain. Integrate 20-min blocks for physical stretches or relaxation to boost retention.`
+                    });
+                } else {
+                    recs.push({
+                        icon: 'shield-check',
+                        type: 'success',
+                        title: 'Optimized Study Routine',
+                        desc: `Consistent ${hours} hours of study is an excellent, sustainable pace. Ensure you review weak concepts weekly.`
+                    });
+                }
+
+                // 2. Mental stress check
+                if (data.mental_health_issues === 'Yes') {
+                    recs.push({
+                        icon: 'heart-handshake',
+                        type: 'danger',
+                        title: 'Stress Counseling Recommended',
+                        desc: 'Mental stress strongly predicts dropouts. Consider consulting a student counselor or talking with family. Well-being is essential for long-term focus.'
+                    });
+                }
+
+                // 3. Mock test average check
+                const mocks = parseFloat(data.mock_test_score_avg);
+                if (mocks < 55) {
+                    recs.push({
+                        icon: 'trending-down',
+                        type: 'warning',
+                        title: 'Strengthen Foundation',
+                        desc: `Mock average is ${mocks}%. Revise high-weightage chapters (like calculus, mechanics, organic synthesis) and prioritize error analysis after tests.`
+                    });
+                } else if (mocks >= 75) {
+                    recs.push({
+                        icon: 'star',
+                        type: 'success',
+                        title: 'High Mock Proficiency',
+                        desc: `Outstanding mock average of ${mocks}%. Keep practicing Advanced-level problems and maintain speed under exam conditions.`
+                    });
+                }
+
+                // 4. Backup plan / alternate admission check
+                if (data.admission_taken === 'No' && prediction === 'Dropout') {
+                    recs.push({
+                        icon: 'git-branch',
+                        type: 'warning',
+                        title: 'Secure backup avenues',
+                        desc: 'Securing admissions in state engineering or allied science colleges reduces mental load, relieving performance pressure.'
+                    });
+                }
+
+                // 5. Peer Pressure check
+                if (data.peer_pressure_level === 'High') {
+                    recs.push({
+                        icon: 'eye-off',
+                        type: 'warning',
+                        title: 'Combat Peer Strain',
+                        desc: 'Reduce comparison with peers. Practice solo testing and review your personal progress curve.'
+                    });
+                }
+
+                // Append to DOM
+                recs.forEach(rec => {
+                    const card = document.createElement('div');
+                    card.className = `rec-card ${rec.type}`;
+                    card.innerHTML = `
+                        <div class="rec-icon"><i data-lucide="${rec.icon}"></i></div>
+                        <div class="rec-details">
+                            <h4>${rec.title}</h4>
+                            <p>${rec.desc}</p>
+                        </div>
+                    `;
+                    recommendationsBox.appendChild(card);
+                });
+
+                // Render vector icons
+                lucide.createIcons();
+            }
+
+            // --- "What-If" Simulator Live Listeners ---
+            const simStudyHoursInput = document.getElementById('sim_study_hours');
+            const simStudyHoursVal = document.getElementById('sim_study_hours_val');
+            const simMockScoreInput = document.getElementById('sim_mock_score');
+            const simMockScoreVal = document.getElementById('sim_mock_score_val');
+            const simPeerPressureSelect = document.getElementById('sim_peer_pressure');
+            const simMentalHealthSelect = document.getElementById('sim_mental_health');
+
+            function triggerSimulatorUpdate() {
+                const studyHours = parseFloat(simStudyHoursInput.value);
+                const mockScore = parseFloat(simMockScoreInput.value);
+                const peerPressure = simPeerPressureSelect.value;
+                const mentalHealth = simMentalHealthSelect.value;
+
+                simStudyHoursVal.textContent = `${studyHours.toFixed(1)} hrs`;
+                simMockScoreVal.textContent = `${mockScore.toFixed(0)}%`;
+
+                const simulatedPayload = {
+                    ...currentPayload,
+                    daily_study_hours: studyHours.toString(),
+                    mock_test_score_avg: mockScore.toString(),
+                    peer_pressure_level: peerPressure,
+                    mental_health_issues: mentalHealth
+                };
+
+                resultWorkspace.classList.add('pulse-updating');
+                
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(simulatedPayload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const probability = data.probability;
+                        const prediction = data.prediction;
+
+                        confidencePercentage.textContent = `${probability.toFixed(1)}%`;
+                        const dashoffset = 314 - (314 * (probability / 100));
+                        gaugeFillCircle.style.strokeDashoffset = dashoffset;
+
+                        if (prediction === 'Dropout') {
+                            resultWorkspace.className = "card result-card dropout-state result-revealed";
+                            outcomeAlertBox.className = "outcome-alert dropout";
+                            predictionResultText.textContent = "DROPOUT RISK";
+                            predictionSummaryText.textContent = "Our ML pipeline forecasts a high probability of dropout. Specific academic or mental stress indicators deserve immediate intervention.";
+                        } else {
+                            resultWorkspace.className = "card result-card success-state result-revealed";
+                            outcomeAlertBox.className = "outcome-alert success";
+                            predictionResultText.textContent = "STABLE / SUCCESS";
+                            predictionSummaryText.textContent = "Excellent trajectory! Student displays positive habits and healthy indicators. Review structural factors below to maintain this momentum.";
+                        }
+
+                        renderRecommendations(prediction, simulatedPayload);
+                        
+                        setTimeout(() => {
+                            resultWorkspace.classList.remove('pulse-updating');
+                        }, 300);
+                    }
+                })
+                .catch(err => {
+                    console.error("Simulator update failed:", err);
+                    resultWorkspace.classList.remove('pulse-updating');
+                });
+            }
+
+            let simDebounce;
+            const handleSimChange = () => {
+                clearTimeout(simDebounce);
+                simDebounce = setTimeout(triggerSimulatorUpdate, 150);
+            };
+
+            simStudyHoursInput.addEventListener('input', () => {
+                simStudyHoursVal.textContent = `${parseFloat(simStudyHoursInput.value).toFixed(1)} hrs`;
+                handleSimChange();
+            });
+            simMockScoreInput.addEventListener('input', () => {
+                simMockScoreVal.textContent = `${parseFloat(simMockScoreInput.value).toFixed(0)}%`;
+                handleSimChange();
+            });
+            simPeerPressureSelect.addEventListener('change', handleSimChange);
+            simMentalHealthSelect.addEventListener('change', handleSimChange);
+
+        });
+    </script>
+</body>
+</html>
