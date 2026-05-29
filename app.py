@@ -4,6 +4,8 @@ import joblib
 import pandas as pd
 import numpy as np
 import os
+import lime
+import lime.lime_tabular
 
 app = Flask(__name__)
 
@@ -16,6 +18,53 @@ try:
 except FileNotFoundError:
     print("Error: Artifacts not found. Please run 'model_training.py' first.")
     exit(1)
+
+# Initialize LIME Explainer
+print("Initializing LIME Explainer...")
+try:
+    # Load training dataset for LIME references
+    df_train = pd.read_csv(os.path.join('dataset', 'JEE_Dropout_After_Class_12.csv'))
+    
+    # Process categorical columns exactly like training
+    df_encoded = df_train.copy()
+    
+    def get_clean_categorical_value_local(val, classes):
+        for c in classes:
+            if pd.isna(c) and (val == 'None' or val == 'nan' or val is None or val == '' or pd.isna(val)):
+                return c
+            if str(c) == str(val):
+                return c
+        return val
+
+    for col in label_encoders.keys():
+        le = label_encoders[col]
+        df_encoded[col] = df_encoded[col].apply(lambda x: get_clean_categorical_value_local(x, le.classes_))
+        df_encoded[col] = le.transform(df_encoded[col])
+        
+    # Scale numerical columns
+    df_encoded[scaler.feature_names_in_] = scaler.transform(df_encoded[scaler.feature_names_in_])
+    
+    # Train features in matching order
+    X_train = df_encoded[df_encoded.columns.drop('dropout')].values
+    
+    # Categorical features indices
+    categorical_features_indices = [list(df_encoded.columns.drop('dropout')).index(col) for col in label_encoders.keys()]
+    
+    # Initialize LIME
+    explainer = lime.lime_tabular.LimeTabularExplainer(
+        training_data=X_train,
+        feature_names=list(df_encoded.columns.drop('dropout')),
+        class_names=['Stayed', 'Dropout'],
+        categorical_features=categorical_features_indices,
+        categorical_names={list(df_encoded.columns.drop('dropout')).index(col): list(le.classes_) for col, le in label_encoders.items()},
+        kernel_width=3,
+        verbose=False,
+        mode='classification'
+    )
+    print("LIME Explainer initialized successfully!")
+except Exception as e:
+    print(f"LIME Explainer initialization failed: {e}")
+    explainer = None
 
 # Define feature order (must match training order)
 # Based on the CSV structure (excluding dropout)
@@ -51,99 +100,70 @@ def is_class_match(val, classes):
             return True
     return False
 
-# A neutral/baseline student profile to compare actual inputs against (used in XAI calculations)
-BASELINE_STUDENT = {
-    'jee_main_score': 75.0,
-    'jee_advanced_score': 55.0,
-    'mock_test_score_avg': 65.0,
-    'school_board': 'CBSE',
-    'class_12_percent': 75.0,
-    'attempt_count': 1.0,
-    'coaching_institute': 'FIITJEE',
-    'daily_study_hours': 5.0,
-    'family_income': 'Mid',
-    'parent_education': 'Graduate',
-    'location_type': 'Semi-Urban',
-    'peer_pressure_level': 'Medium',
-    'mental_health_issues': 'No',
-    'admission_taken': 'No'
-}
-
-def explain_prediction_xai(model, scaler, label_encoders, input_dict, base_dropout_prob):
-    # Model-agnostic local feature attribution (Kernel-SHAP / LIME style)
-    # We substitute each feature's value with a baseline student's value one-by-one, 
-    # run inference, and measure the difference in dropout probability.
-    explanations = []
+def explain_prediction_lime(input_df):
+    if explainer is None:
+        return []
     
-    # Run a perturbation loop
-    for feature in FEATURE_ORDER:
-        # Create a modified profile starting from the actual input_dict
-        modified_dict = input_dict.copy()
+    try:
+        # LIME expects a 1D numpy array representing the preprocessed features
+        row = input_df.iloc[0].values
         
-        # Substitute the baseline value for THIS feature
-        modified_dict[feature] = BASELINE_STUDENT[feature]
+        # Generate local explanation using model's predict_proba
+        exp = explainer.explain_instance(
+            data_row=row,
+            predict_fn=model.predict_proba,
+            num_features=6
+        )
         
-        # Process and scale the modified dict
-        try:
-            modified_df = pd.DataFrame([modified_dict])
-            
-            # Encode categorical
-            for col in CATEGORICAL_FEATURES:
-                le = label_encoders[col]
-                cleaned_val = get_clean_categorical_value(modified_dict[col], le.classes_)
-                if is_class_match(cleaned_val, le.classes_):
-                    modified_df[col] = le.transform([cleaned_val])
-                else:
-                    # Fallback to zero code
-                    modified_df[col] = 0
-            
-            # Scale numerical
-            modified_df[NUMERICAL_FEATURES] = scaler.transform(modified_df[NUMERICAL_FEATURES])
-            
-            # Run model inference to get perturbed probability
-            if hasattr(model, "predict_proba"):
-                probs = model.predict_proba(modified_df)[0]
-                perturbed_dropout_prob = float(probs[1] if len(probs) > 1 else 0)
-            else:
-                pred = model.predict(modified_df)[0]
-                perturbed_dropout_prob = 1.0 if pred == 1 else 0.0
+        explanations = []
+        for feature_exp, weight in exp.as_list():
+            # Find which feature name this explanation represents
+            feature_name = None
+            for feat in FEATURE_ORDER:
+                if feat in feature_exp:
+                    feature_name = feat
+                    break
+                    
+            if feature_name is None:
+                continue
                 
-            # The contribution of the student's ACTUAL value is:
-            # P(actual) - P(baseline_substituted)
-            # A positive contribution means this feature increases dropout risk.
-            # A negative contribution means this feature decreases dropout risk.
-            contribution = base_dropout_prob - (perturbed_dropout_prob * 100)
+            display_name = feature_name.replace('_', ' ').replace('avg', '').title()
             
-            # Format the output value to represent the clean user-facing name
-            display_name = feature.replace('_', ' ').replace('avg', '').title()
+            # The contribution represents the weight impact on class 1 (Dropout) in percentage
+            contribution = round(float(weight) * 100, 2)
             
-            # Clean up value display
-            actual_val = input_dict[feature]
-            if feature in NUMERICAL_FEATURES:
-                if feature == 'daily_study_hours':
-                    actual_display = f"{float(actual_val):.1f} hrs"
-                elif feature in ['jee_main_score', 'jee_advanced_score', 'mock_test_score_avg', 'class_12_percent']:
-                    actual_display = f"{float(actual_val):.1f}%"
+            # Extract and unprocess actual value to display cleanly in frontend
+            actual_val = input_df[feature_name].iloc[0]
+            if feature_name in NUMERICAL_FEATURES:
+                feat_idx = NUMERICAL_FEATURES.index(feature_name)
+                # Unscale: (scaled_val * std) + mean
+                unscaled_val = (actual_val * scaler.scale_[feat_idx]) + scaler.mean_[feat_idx]
+                if feature_name == 'daily_study_hours':
+                    actual_display = f"{unscaled_val:.1f} hrs"
+                elif feature_name in ['jee_main_score', 'jee_advanced_score', 'mock_test_score_avg', 'class_12_percent']:
+                    actual_display = f"{unscaled_val:.1f}%"
                 else:
-                    actual_display = str(int(float(actual_val)))
+                    actual_display = str(int(round(unscaled_val)))
             else:
-                actual_display = str(actual_val)
+                le = label_encoders[feature_name]
+                unencoded_val = le.inverse_transform([int(actual_val)])[0]
+                # Map nan to 'None'
+                actual_display = 'None' if pd.isna(unencoded_val) else str(unencoded_val)
                 
             explanations.append({
-                "feature": feature,
+                "feature": feature_name,
                 "display_name": display_name,
                 "actual_value": actual_display,
-                "contribution": round(contribution, 2)
+                "contribution": contribution
             })
             
-        except Exception as e:
-            # Silently skip if there's any perturbation failure
-            print(f"Perturbation failed for {feature}: {e}")
-            continue
-            
-    # Sort contributions by absolute impact (highest impact first)
-    explanations.sort(key=lambda x: abs(x["contribution"]), reverse=True)
-    return explanations
+        # Sort contributions by absolute impact
+        explanations.sort(key=lambda x: abs(x["contribution"]), reverse=True)
+        return explanations
+        
+    except Exception as e:
+        print(f"LIME explanation generation failed: {e}")
+        return []
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -257,8 +277,8 @@ def predict_api():
         
         prediction = "Dropout" if pred == 1 else "Not Dropout"
         
-        # Calculate XAI Local Feature Attributions
-        xai_explanations = explain_prediction_xai(model, scaler, label_encoders, input_dict, probability)
+        # Calculate XAI Local Feature Attributions using LIME
+        xai_explanations = explain_prediction_lime(input_df)
         
         return flask.jsonify({
             "success": True,
