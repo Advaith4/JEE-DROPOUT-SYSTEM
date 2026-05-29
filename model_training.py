@@ -18,8 +18,8 @@ if not os.path.exists('static'):
     os.makedirs('static')
 
 # 1. Load Data
-# Assuming the file is in the 'archive' folder as seen in the file list
-file_path = os.path.join('archive', 'JEE_Dropout_After_Class_12.csv')
+# Assuming the file is in the 'dataset' folder as seen in the file list
+file_path = os.path.join('dataset', 'JEE_Dropout_After_Class_12.csv')
 print(f"Loading data from {file_path}...")
 df = pd.read_csv(file_path)
 

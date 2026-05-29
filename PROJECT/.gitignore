@@ -1,8 +1,0 @@
-__pycache__/
-*.pyc
-venv/
-.env
-.vscode/
-.idea/
-static/model_comparison.png
-static/confusion_matrix.png

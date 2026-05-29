@@ -5,20 +5,14 @@ import pandas as pd
 import numpy as np
 import os
 
-# Get directories
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(PROJECT_DIR)
-
-app = Flask(__name__,
-            template_folder=os.path.join(ROOT_DIR, 'templates'),
-            static_folder=os.path.join(ROOT_DIR, 'static'))
+app = Flask(__name__)
 
 # Load artifacts
 print("Loading model and preprocessors...")
 try:
-    model = joblib.load(os.path.join(PROJECT_DIR, 'best_model.pkl'))
-    scaler = joblib.load(os.path.join(PROJECT_DIR, 'scaler.pkl'))
-    label_encoders = joblib.load(os.path.join(PROJECT_DIR, 'label_encoders.pkl'))
+    model = joblib.load('best_model.pkl')
+    scaler = joblib.load('scaler.pkl')
+    label_encoders = joblib.load('label_encoders.pkl')
 except FileNotFoundError:
     print("Error: Artifacts not found. Please run 'model_training.py' first.")
     exit(1)
