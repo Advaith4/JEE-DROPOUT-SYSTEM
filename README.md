@@ -1,124 +1,236 @@
-# 🎓 JEE Journey Predictor & Insights Hub
+# JEE Dropout Prediction System
 
-[![Python Version](https://img.shields.ly/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Flask Version](https://img.shields.ly/badge/flask-3.1.3-green.svg)](https://flask.palletsprojects.com/)
-[![Scikit-Learn](https://img.shields.ly/badge/scikit--learn-1.7.2-orange.svg)](https://scikit-learn.org/)
-[![LIME Version](https://img.shields.ly/badge/XAI-LIME-blueviolet.svg)](#)
-[![License](https://img.shields.ly/badge/license-MIT-brightgreen.svg)](#)
+A Flask-based machine learning web app that estimates whether a JEE aspirant is at risk of dropping out after Class 12. The app collects academic, preparation, family, and stress-related inputs, runs them through a trained scikit-learn model, and displays a prediction with probability, recommendations, diagnostics, and LIME-based feature explanations.
 
-A full-stack, state-of-the-art machine learning web application designed to forecast and mitigate dropout risks for students preparing for the highly competitive Joint Entrance Examination (JEE) in India. 
+This project is intended as an educational/internship ML application. It should be treated as a decision-support demo, not as a formal counseling, medical, or admissions decision system.
 
-Leveraging historical student dataset indicators and modern predictive modeling, the platform serves as a powerful diagnostic tool for educators, counselors, and students to analyze academic standing, preparation habits, and socio-emotional factors—delivering immediate actionable guidance and wellness support recommendations.
+## What The Project Contains
 
----
+- A Flask backend in `app.py`
+- A multi-step student input form in `templates/index.html`
+- Styling and static charts in `static/`
+- A training script in `model_training.py`
+- A CSV dataset in `dataset/JEE_Dropout_After_Class_12.csv`
+- Saved model artifacts:
+  - `best_model.pkl`
+  - `scaler.pkl`
+  - `label_encoders.pkl`
 
-## ✨ Features & Capabilities
+## Main Features
 
-### 1. 📋 Multi-Step Profile Wizard
-* **Effortless Ingestion**: Captures **14 critical student variables** categorized into three elegant logical phases:
-  * **Step 1: Academic Standing** (JEE Main %ile, JEE Advanced %, Mock Averages, Attempts, Class 12th %)
-  * **Step 2: Preparation Setting** (Coaching, Daily Study Hours, Alternative backups, Location)
-  * **Step 3: Socio-Emotional Profile** (School Board, Family Income Bracket, Parent Education, Peer rivalry, Mental strain)
-* **Real-time Boundary Checking**: Front-end validation toasts immediately alert users if values exceed mathematical bounds.
+### Student Profile Form
 
-### 2. ⚡ Asynchronous REST API Inference
-* **No Flashing Screen Reloads**: Inferences are managed asynchronously via a high-performance custom Flask REST endpoint using the **Fetch API**.
-* **Immersive Loader**: Displays simulated computing operations (e.g. *Ingesting features... Scaling vectors... Running classifier...*) to convey diagnostic rigor.
+The frontend captures 14 input features:
 
-### 3. 🎯 Real-Time "What-If" Simulator
-* **Interactive Tweak Sliders**: Allows counselors to adjust study hours or mock scores directly on the results screen.
-* **Instant Recalculation**: Background fetch events instantly pulse and update the risk percentage circle and counsel boxes in real-time.
+- `jee_main_score`
+- `jee_advanced_score`
+- `mock_test_score_avg`
+- `school_board`
+- `class_12_percent`
+- `attempt_count`
+- `coaching_institute`
+- `daily_study_hours`
+- `family_income`
+- `parent_education`
+- `location_type`
+- `peer_pressure_level`
+- `mental_health_issues`
+- `admission_taken`
 
-### 4. 🧭 Actionable Recommendations Matrix
-* **Targeted Intervention**: Displays immediate color-coded directives mapped directly to risk parameters:
-  * ⚠️ **Burnout warnings** if study hours exceed 9.5 hours daily.
-  * 📈 **Preparation optimization guidelines** if mock scores drop below 55%.
-  * ❤️ **Wellness and counseling encouragement** if high mental strain or peer pressure is checked.
+The form is split into three steps:
 
-### 5. 📊 Model Diagnostics Console
-* **Tabbed Diagnostics**: Includes a mockup container that toggles between:
-  1. **Supervised Algorithms Comparison**: Displaying metrics for Logistic Regression, Decision Tree, KNN, Random Forest, and SVM.
-  2. **Model Confusion Matrix**: Detailing precision and classification accuracy.
-  3. **Key Predictors Guide**: Reviewing which variables influence outcomes most heavily.
+1. Academic details
+2. Preparation environment
+3. Personal, family, and stress-related details
 
-### 6. 🧠 Explainable AI (LIME) Local Attributions
-* **Official LIME Integration**: Integrates the official `lime.lime_tabular.LimeTabularExplainer` fitted on the training dataset to explain individual model predictions in real-time.
-* **Feature Contribution Visualizer**: Renders dynamic, responsive horizontal contribution bars:
-  * 🔴 **Glow Coral Red**: Features that increase dropout risk (positive contributions).
-  * 🟢 **Glow Emerald Green**: Factors that act as protective drivers (negative contributions).
-* **Reverse Preprocessing on-the-fly**: Preprocessed values are decoded back to human-readable scales (e.g., `2.0 hrs` daily study, `Low` family income) for high interpretability.
+The browser performs basic required-field and numeric range validation before sending the request.
 
----
+### Prediction API
 
-## 🛠️ Technology Stack
+The app exposes a `/predict` endpoint that accepts JSON or form data. It:
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | HTML5, Vanilla HSL CSS3, JavaScript (ES6+ REST Fetch), Lucide Icons, Outfit Typography |
-| **Backend** | Python 3.10+, Flask REST API |
-| **Machine Learning & XAI** | Scikit-Learn, Pandas, NumPy, LIME (Local Interpretable Model-agnostic Explanations), Joblib |
-| **Graphics** | Matplotlib, Seaborn |
+1. Validates required fields
+2. Encodes categorical values using saved label encoders
+3. Scales numerical fields using the saved scaler
+4. Runs the saved model
+5. Returns the prediction, dropout probability, original input data, and LIME explanations
 
----
+Example response shape:
 
-## 📂 Project Directory Structure
+```json
+{
+  "success": true,
+  "prediction": "Dropout",
+  "probability": 72.35,
+  "input_data": {},
+  "xai_explanations": []
+}
+```
 
-Consolidated project directories now map elegantly under a single, clean workspace:
+### What-If Simulator
+
+After a prediction is shown, the results screen includes controls for changing:
+
+- Daily study hours
+- Mock test average
+- Peer pressure level
+- Mental health/stress status
+
+Changing these controls sends another `/predict` request and updates the risk display without resubmitting the full form.
+
+### Recommendations
+
+The frontend generates simple rule-based recommendations based on the prediction and selected input values. Examples include:
+
+- Burnout warning for very high study hours
+- Foundation-building advice for low mock scores
+- Counseling/wellness advice when mental stress is marked
+- Backup admission suggestion when the model predicts dropout risk and no backup admission is selected
+
+These recommendations are frontend rules, not outputs learned by the ML model.
+
+### Diagnostics
+
+The app displays two static diagnostic images generated by `model_training.py`:
+
+- `static/model_comparison.png`
+- `static/confusion_matrix.png`
+
+The diagnostics section also includes a written list of key indicators used in the project UI.
+
+### Explainable AI
+
+The backend uses `lime.lime_tabular.LimeTabularExplainer` to generate local feature explanations for individual predictions. The frontend displays the top feature contributions as horizontal bars:
+
+- Positive contribution: increases predicted dropout risk
+- Negative contribution: reduces predicted dropout risk
+
+The UI text refers to the output as LIME-style explanations. SHAP is not used in this project.
+
+## Tech Stack
+
+| Area | Tools |
+| --- | --- |
+| Frontend | HTML, CSS, JavaScript, Jinja2 templates |
+| Backend | Python, Flask |
+| Machine Learning | pandas, NumPy, scikit-learn, joblib |
+| Explainability | LIME |
+| Charts | Matplotlib, Seaborn |
+
+## Project Structure
 
 ```text
-JEE-DROPOUT-SYSTEM/
-│
-├── dataset/
-│   └── JEE_Dropout_After_Class_12.csv   # Historical training database
-│
-├── static/
-│   ├── style.css                        # Immersive glassmorphic design system
-│   ├── model_comparison.png             # Graph: F1-score comparisons
-│   └── confusion_matrix.png             # Graph: Confusion matrix of the champion model
-│
-├── templates/
-│   └── index.html                       # Multi-step UI wizard, simulator and scripts
-│
-├── app.py                               # Flask server and inference REST endpoint
-├── model_training.py                    # Automated ML training pipeline
-├── PROJECT_REPORT.md                    # Core internship/project summary report
-├── .gitignore                           # Consolidated Git ignore list
-└── README.md                            # Comprehensive hub documentation
+NXTLOGIC/
+|-- app.py
+|-- model_training.py
+|-- requirements.txt
+|-- Procfile
+|-- README.md
+|-- PROJECT_REPORT.md
+|-- best_model.pkl
+|-- scaler.pkl
+|-- label_encoders.pkl
+|-- dataset/
+|   `-- JEE_Dropout_After_Class_12.csv
+|-- static/
+|   |-- style.css
+|   |-- model_comparison.png
+|   `-- confusion_matrix.png
+`-- templates/
+    `-- index.html
 ```
 
----
+## Setup
 
-## 🚀 Setup & Installation
+### 1. Create and activate a virtual environment
 
-### 1. Clone the repository
 ```bash
-git clone https://github.com/Advaith4/JEE-DROPOUT-SYSTEM.git
-cd JEE-DROPOUT-SYSTEM
+python -m venv venv
 ```
 
-### 2. Install dependencies
-Ensure you have **Python 3.10 or later** installed. Install the necessary mathematical, statistical, and server packages:
+On Windows PowerShell:
+
 ```bash
-pip install flask joblib pandas numpy scikit-learn matplotlib seaborn lime
+venv\Scripts\Activate.ps1
 ```
 
-### 3. (Optional) Run the ML Pipeline
-To retrain the models, select the champion F1-score model, and regenerate diagnostic graphs inside `static/`:
+On macOS/Linux:
+
+```bash
+source venv/bin/activate
+```
+
+### 2. Install runtime dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+The current `requirements.txt` is enough to run the Flask app with the already-saved model artifacts.
+
+### 3. Run the app
+
+```bash
+python app.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000/
+```
+
+## Retraining The Model
+
+To retrain the model and regenerate the diagnostic images, install the plotting packages used by `model_training.py`:
+
+```bash
+pip install matplotlib seaborn
+```
+
+Then run:
+
 ```bash
 python model_training.py
 ```
 
-### 4. Boot the server
-Launch the local development Flask server:
+The script trains and compares:
+
+- Logistic Regression
+- Decision Tree
+- Random Forest
+- SVM
+- KNN
+
+It selects a model based primarily on F1 score, with a preference for Random Forest when it is within 2 percent of the best F1 score. The selected model and preprocessors are saved back to:
+
+- `best_model.pkl`
+- `scaler.pkl`
+- `label_encoders.pkl`
+
+The script also regenerates:
+
+- `static/model_comparison.png`
+- `static/confusion_matrix.png`
+
+## Important Notes
+
+- The project uses a saved scikit-learn model, not a deep learning model.
+- The diagnostic charts are static files, not live dashboards.
+- The recommendations are rule-based frontend guidance, not model-generated interventions.
+- The system predicts dropout risk from the available dataset features; it should not be used as the only basis for real student decisions.
+- LIME explanations may vary slightly because local surrogate explanations are approximate.
+
+## Deployment Notes
+
+The included `Procfile` is suitable for platforms that run Python web apps through Gunicorn:
+
+```text
+web: gunicorn app:app
+```
+
+For local development, use:
+
 ```bash
 python app.py
 ```
-Open your favorite web browser and navigate to **[http://127.0.0.1:5000/](http://127.0.0.1:5000/)** to access the system!
-
----
-
-## 🔬 Machine Learning Performance Summary
-
-The automated pipeline evaluates 5 algorithms (Logistic Regression, Decision Trees, Random Forests, SVM, and KNN) on stratified test splits. The system selects the champion based on **F1 Score** to balance precision and recall. 
-
-You can view the comparisons and matrices directly in the application's **Diagnostics Console**!
